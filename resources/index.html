@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.background {
+  fill: none;
+  pointer-events: all;
+}
+
+.state {
+  cursor: pointer;
+}
+
+.district {
+  stroke: #fff;
+  stroke-opacity: 0.7;
+  cursor: pointer;
+}
+
+.feature.active {
+}
+
+.mesh {
+  fill: none;
+  stroke: #fff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#hover-info {
+  position: absolute;
+  left: 40px;
+  top: 40px;
+}
+
+#placename {
+  font-size: 20px;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+}
+
+#scoretext {
+  font-size: 20px;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+}
+
+</style>
+<body>
+<div id="hover-info"></div>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/queue.v1.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script>
+
+var width = 960,
+    height = 500,
+    active = d3.select(null);
+
+var projection = d3.geo.albersUsa()
+    .scale(1000)
+    .translate([width / 2, height / 2]);
+
+var zoom = d3.behavior.zoom()
+    .translate([0, 0])
+    .scale(1)
+    .scaleExtent([1, 32])
+    .on("zoom", zoomed);
+
+var path = d3.geo.path()
+    .projection(projection);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .on("click", stopped, true);
+
+var g = svg.append("g");
+
+svg
+    .call(zoom) // delete this line to disable free zooming
+    .call(zoom.event);
+
+queue()
+    .defer(d3.json, "us.json")
+    .defer(d3.json, "districts-113.json")
+    .defer(d3.json, "state_scores.json")
+    .await(ready);
+
+var state_codes = [1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20,
+                   21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+                   36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50, 51,
+                   53, 54, 55, 56];
+
+var state_names =
+{"1": "Alabama",
+ "2": "Alaska",
+ "4": "Arizona",
+ "5": "Arkansas",
+ "6": "California",
+ "8": "Colorado",
+ "9": "Connecticut",
+ "10": "Delaware",
+ "11": "District of Columbia",
+ "12": "Florida",
+ "13": "Georgia",
+ "15": "Hawaii",
+ "16": "Idaho",
+ "17": "Illinois",
+ "18": "Indiana",
+ "19": "Iowa",
+ "20": "Kansas",
+ "21": "Kentucky",
+ "22": "Louisiana",
+ "23": "Maine",
+ "24": "Maryland",
+ "25": "Massachusetts",
+ "26": "Michigan",
+ "27": "Minnesota",
+ "28": "Mississippi",
+ "29": "Missouri",
+ "30": "Montana",
+ "31": "Nebraska",
+ "32": "Nevada",
+ "33": "New Hampshire",
+ "34": "New Jersey",
+ "35": "New Mexico",
+ "36": "New York",
+ "37": "North Carolina",
+ "38": "North Dakota",
+ "39": "Ohio",
+ "40": "Oklahoma",
+ "41": "Oregon",
+ "42": "Pennsylvania",
+ "44": "Rhode Island",
+ "45": "South Carolina",
+ "46": "South Dakota",
+ "47": "Tennessee",
+ "48": "Texas",
+ "49": "Utah",
+ "50": "Vermont",
+ "51": "Virginia",
+ "53": "Washington",
+ "54": "West Virginia",
+ "55": "Wisconsin",
+ "56": "Wyoming",
+ "60": "America Samoa",
+ "64": "Micronesia",
+ "66": "Guam",
+ "68": "Marshall Islands",
+ "69": "Mariana Islands",
+ "70": "Palau",
+ "72": "Puerto Rico",
+ "74": "U.S. Minor Outlying Islands",
+ "78": "Virgin Islands"
+};
+
+function score_color (score) {
+  var color;
+  if (score >= 0.97) {
+    color = "#00ff33";
+  } else if (score >= 0.94) {
+    color = "#00ff33";
+  } else if (score >= 0.90) {
+    color = "#33ff33";
+  } else if (score >= 0.87) {
+    color = "#66ff33";
+  } else if (score >= 0.84) {
+    color = "#99ff33";
+  } else if (score >= 0.80) {
+    color = "#ccff33";
+  } else if (score >= 0.77) {
+    color = "#ffff33";
+  } else if (score >= 0.74) {
+    color = "#ffcc33";
+  } else if (score >= 0.70) {
+    color = "#ff9933";
+  } else if (score >= 0.67) {
+    color = "#ff6633";
+  } else if (score >= 0.64) {
+    color = "#ff3333";
+  } else if (score >= 0.60) {
+    color = "#ff2233";
+  } else {
+    color = "#ff0033";
+  }
+  return d3.rgb(color).darker(0.4);
+}
+
+function score_grade (score) {
+  if (score >= 0.97) {
+    return "A+";
+  } else if (score >= 0.94) {
+    return "A&nbsp";
+  } else if (score >= 0.90) {
+    return "A-";
+  } else if (score >= 0.87) {
+    return "B+";
+  } else if (score >= 0.84) {
+    return "B&nbsp";
+  } else if (score >= 0.80) {
+    return "B-";
+  } else if (score >= 0.77) {
+    return "C+";
+  } else if (score >= 0.74) {
+    return "C&nbsp";
+  } else if (score >= 0.70) {
+    return "C-";
+  } else if (score >= 0.67) {
+    return "D+";
+  } else if (score >= 0.64) {
+    return "D&nbsp";
+  } else if (score >= 0.60) {
+    return "D-";
+  } else {
+    return "F&nbsp";
+  }
+}
+
+
+function ready(error, us, congress, scores) {
+  if (error) return console.error(error);
+
+  var district_view = false;
+
+  d3.select("svg").insert("rect", "g")
+      .attr("class", "background")
+      .attr("width", width)
+      .attr("height", height)
+      .on("click", reset)
+      .on("mouseover", function (d) {
+                          d3.select("#placename").remove();
+                          d3.select("#scoretext").remove();
+                       });
+
+  function state_color (d) {
+    if (district_view) {
+      return "#ccc";
+    } else {
+      return score_color(scores.states[d.id].shape_score);
+    }
+  };
+
+  svg.append("defs").append("path")
+      .attr("id", "land")
+      .datum(topojson.feature(us, us.objects.land))
+      .attr("d", path);
+
+  svg.append("clipPath")
+      .attr("id", "clip-land")
+    .append("use")
+      .attr("xlink:href", "#land");
+
+  g.selectAll("path")
+      .data(topojson.feature(us, us.objects.states).features)
+    .enter().append("path")
+      .attr("d", path)
+      .attr("class", "state")
+      .style("fill", state_color)
+      .on("click", clicked)
+      .on("mouseover", function (d) {
+                         d3.select("#placename").remove();
+                         d3.select("#scoretext").remove();
+                         var hover = d3.select("#hover-info");
+                         hover.append("div").attr("id", "placename")
+                              .text(state_names[d.id.toString()]);
+
+                         var score = scores.states[d.id].shape_score;
+                         hover.append("div").attr("id", "scoretext")
+                              .html(score_grade(score) + " (" + (score * 100).toPrecision(3).toString() + ")");
+                         d3.select(this).style("fill", d3.rgb(state_color(d)).brighter(0.4))
+                       })
+      .on("mouseout", function (d) {
+                        d3.select(this).style("fill", d3.rgb(state_color(d)))
+                      });
+
+  g.append("path")
+      .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+      .attr("class", "mesh")
+      .attr("d", path);
+
+  function clicked(d) {
+    if (active.node() === this) return reset();
+
+    function district_color (k) {
+      return score_color(scores.states[d.id].districts[district(k)].shape_score);
+    }
+
+    district_view = true;
+    active.classed("active", false);
+    active = d3.select(this).classed("active", true);
+
+    d3.selectAll(".district-g").remove();
+    d3.selectAll(".state").transition().style("fill", "#ccc");
+
+    g.append("g")
+       .attr("class", "district-g").selectAll("path")
+         .data(topojson.feature(congress, congress.objects.districts).features
+                                            .filter(function (k) {
+                                                      return state(k) == d.id;
+                                                    }))
+       .enter().append("path")
+         .attr("clip-path", "url(#clip-land)")
+         .attr("d", path)
+         .attr("class", "district")
+         .style("fill", district_color)
+         .on("click", reset)
+         .on("mouseover", function (k) {
+                            d3.select("#placename").remove();
+                            d3.select("#scoretext").remove();
+                            var hover = d3.select("#hover-info");
+                            hover.append("div").attr("id", "placename")
+                                 .text(state_names[d.id.toString()] + " - District " + district(k));
+
+                            var score = scores.states[d.id].districts[district(k)].shape_score;
+                            hover.append("div").attr("id", "scoretext")
+                                 .html(score_grade(score) + " (" + (score * 100).toPrecision(3).toString() + ")");
+                            d3.select(this).style("fill", d3.rgb(district_color(k)).brighter(0.4))
+                          })
+         .on("mouseout", function (k) {
+                           d3.select(this).style("fill", d3.rgb(district_color(k)))
+                         });
+
+    var bounds = path.bounds(d),
+        dx = bounds[1][0] - bounds[0][0],
+        dy = bounds[1][1] - bounds[0][1],
+        x = (bounds[0][0] + bounds[1][0]) / 2,
+        y = (bounds[0][1] + bounds[1][1]) / 2,
+        scale = .9 / Math.max(dx / width, dy / height),
+        translate = [width / 2 - scale * x, height / 2 - scale * y];
+
+    svg.transition()
+        .duration(750)
+        .call(zoom.translate(translate).scale(scale).event);
+  }
+
+  function reset() {
+    district_view = false;
+    active.classed("active", false);
+    active = d3.select(null);
+
+    d3.selectAll(".district-g").remove();
+    d3.selectAll(".state").transition().style("fill",
+      function (d) { return score_color(scores.states[d.id].shape_score); });
+
+    svg.transition()
+        .duration(750)
+        .call(zoom.translate([0, 0]).scale(1).event);
+  }
+
+}
+
+function zoomed() {
+  g.style("stroke-width", 1.5 / d3.event.scale + "px");
+  g.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+}
+
+function state(d) {
+  return (d.id / 100 | 0);
+}
+
+function district(d) {
+  var code = (d.id % 100);
+  if (code > 0) {
+    return code;
+  } else {
+    return 1;
+  }
+}
+
+// If the drag behavior prevents the default click,
+// also stop propagation so we don’t click-to-zoom.
+function stopped() {
+  if (d3.event.defaultPrevented) d3.event.stopPropagation();
+}
+
+</script>
