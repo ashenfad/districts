@@ -158,31 +158,45 @@ var state_names =
 function score_color (score) {
   var color;
   if (score >= 0.97) {
-    color = "#00ff33";
+    color = "#11ff33";
   } else if (score >= 0.94) {
-    color = "#00ff33";
-  } else if (score >= 0.90) {
     color = "#33ff33";
+  } else if (score >= 0.90) {
+    color = "#55ff33";
   } else if (score >= 0.87) {
-    color = "#66ff33";
+    color = "#77ff33";
   } else if (score >= 0.84) {
     color = "#99ff33";
   } else if (score >= 0.80) {
-    color = "#ccff33";
+    color = "#bbff33";
   } else if (score >= 0.77) {
-    color = "#ffff33";
+    color = "#ddff33";
   } else if (score >= 0.74) {
-    color = "#ffcc33";
+    color = "#ffff33";
   } else if (score >= 0.70) {
-    color = "#ff9933";
+    color = "#ffdd33";
   } else if (score >= 0.67) {
-    color = "#ff6633";
+    color = "#ffbb33";
   } else if (score >= 0.64) {
-    color = "#ff3333";
+    color = "#ff9933";
   } else if (score >= 0.60) {
-    color = "#ff2233";
+    color = "#ff7733";
+  } else if (score >= 0.57) {
+    color = "#ff5533";
+  } else if (score >= 0.54) {
+    color = "#ff3333";
+  } else if (score >= 0.50) {
+    color = "#ff1133";
+  } else if (score >= 0.40) {
+    color = "#ee0033";
+  } else if (score >= 0.30) {
+    color = "#dd0033";
+  } else if (score >= 0.20) {
+    color = "#cc0033";
+  } else if (score >= 0.10) {
+    color = "#bb0033";
   } else {
-    color = "#ff0033";
+    color = "#aa0033";
   }
   return d3.rgb(color).darker(0.4);
 }

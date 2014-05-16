@@ -37,17 +37,20 @@
   (let [district-map (into {} (map #(vector (:district %) %)
                                    district-geos))
         districts (set (keys district-map))]
-    (zipmap districts
+    (zipmap (if (= districts #{0}) [1] districts)
             (for [district districts]
-              (let [hull (.convexHull (:shape (district-map district)))
-                    total-area (.getArea hull)]
+              (let [shape (:shape (district-map district))
+                    area (.getArea shape)
+                    hull (.convexHull shape)
+                    hull-area (.getArea hull)]
                 (->> (keep #(let [s (:shape (district-map %))]
                               (when (.intersects hull s)
                                 (.getArea (.intersection hull s))))
                            (disj districts district))
                      (reduce +)
-                     (- total-area)
-                     (* (/ total-area))
+                     (- hull-area)
+                     (* (/ hull-area))
+                     (max 0)
                      (truncate)
                      (hash-map :shape_score)))))))
 
@@ -93,8 +96,7 @@
   (->> (merge-with #(merge-with (fn [a b] (merge-with merge a b)) %1 %2)
                    (into {} (map scrape-csv state-codes))
                    (-> (load-districts "resources/districts-113-geo.json.gz")
-                       (shape-scores)
-                       (select-keys state-codes)))
+                       (shape-scores)))
        (hash-map :states)
        (json/json-str)
        (spit "resources/state_scores.json")))
