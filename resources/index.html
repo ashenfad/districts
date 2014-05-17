@@ -157,8 +157,10 @@ var state_names =
 
 function score_color (score) {
   var color;
-  if (score >= 0.97) {
-    color = "#11ff33";
+  if (score == 1) {
+    color = "#eee";
+  } else if (score >= 0.97) {
+    color = "#33ff33";
   } else if (score >= 0.94) {
     color = "#33ff33";
   } else if (score >= 0.90) {

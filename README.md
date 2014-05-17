@@ -1,14 +1,11 @@
 # districts
 
-A Clojure library designed to ... well, that part is up to you.
+Ranking congressional districts for gerrymandering.
 
-## Usage
+http://bl.ocks.org/ashenfad/48b4621bd3a9f1bb884a
 
-FIXME
+---
 
-## License
-
-Copyright © 2014 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+http://stackoverflow.com/questions/14565963/topojson-for-congressional-districts
+http://bl.ocks.org/mbostock/9656675
+https://github.com/mbostock/us-atlas
